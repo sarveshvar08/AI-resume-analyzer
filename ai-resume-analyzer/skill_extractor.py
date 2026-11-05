@@ -1,48 +1,73 @@
 import re
 
+
 SKILL_CATEGORIES = {
-    "Programming Languages": [
-        "Python",
-        "Java",
-        "JavaScript",
-        "C++"
-    ],
 
-    "Web Development": [
-        "HTML",
-        "CSS",
-        "React",
-        "Node.js",
-        "Streamlit",
-        "FastAPI"
-    ],
+    "Programming Languages": {
+        "Python": ["Python"],
+        "Java": ["Java"],
+        "JavaScript": ["JavaScript", "JS"],
+        "C++": ["C++"]
+    },
 
-    "Databases": [
-        "SQL",
-        "MySQL",
-        "PostgreSQL",
-        "MongoDB",
-        "Firebase"
-    ],
+    "Web Development": {
+        "HTML": ["HTML", "HTML5"],
+        "CSS": ["CSS", "CSS3"],
+        "React": ["React", "React.js"],
+        "Node.js": ["Node.js", "NodeJS"],
+        "Streamlit": ["Streamlit"],
+        "FastAPI": ["FastAPI"]
+    },
 
-    "AI & Machine Learning": [
-        "Machine Learning",
-        "Deep Learning",
-        "NLP",
-        "TensorFlow",
-        "PyTorch",
-        "Scikit-learn"
-    ],
+    "Databases": {
+        "SQL": ["SQL"],
+        "MySQL": ["MySQL"],
+        "PostgreSQL": ["PostgreSQL", "Postgres"],
+        "MongoDB": ["MongoDB"],
+        "Firebase": ["Firebase"]
+    },
 
-    "Tools & Platforms": [
-        "Git",
-        "GitHub",
-        "Docker",
-        "Linux",
-        "AWS",
-        "Azure"
-    ]
+    "AI & Machine Learning": {
+        "Machine Learning": ["Machine Learning", "ML"],
+        "Deep Learning": ["Deep Learning", "DL"],
+        "Natural Language Processing": [
+            "Natural Language Processing",
+            "NLP"
+        ],
+        "TensorFlow": ["TensorFlow"],
+        "PyTorch": ["PyTorch"],
+        "Scikit-learn": [
+            "Scikit-learn",
+            "sklearn",
+            "Scikit learn"
+        ]
+    },
+
+    "Tools & Platforms": {
+        "Git": ["Git"],
+        "GitHub": ["GitHub"],
+        "Docker": ["Docker"],
+        "Linux": ["Linux"],
+        "Amazon Web Services": ["AWS", "Amazon Web Services"],
+        "Azure": ["Azure"]
+    }
 }
+
+
+def contains_skill(text, aliases):
+
+    for alias in aliases:
+
+        pattern = (
+            r"(?<![A-Za-z0-9_])"
+            + re.escape(alias)
+            + r"(?![A-Za-z0-9_])"
+        )
+
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+
+    return False
 
 
 def extract_skills(text):
@@ -53,16 +78,11 @@ def extract_skills(text):
 
         found_skills = []
 
-        for skill in skills:
+        for canonical_name, aliases in skills.items():
 
-            pattern = (
-                r"(?<![A-Za-z0-9_])"
-                + re.escape(skill)
-                + r"(?![A-Za-z0-9_])"
-            )
+            if contains_skill(text, aliases):
 
-            if re.search(pattern, text, re.IGNORECASE):
-                found_skills.append(skill)
+                found_skills.append(canonical_name)
 
         detected_skills[category] = found_skills
 

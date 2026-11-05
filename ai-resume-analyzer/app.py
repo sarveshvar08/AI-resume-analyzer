@@ -17,7 +17,10 @@ st.set_page_config(
     page_icon="📄",
     layout="wide"
 )
+# Initialize session state
 
+if "show_results" not in st.session_state:
+    st.session_state["show_results"] = False
 
 # ==========================================
 # CUSTOM CSS
@@ -116,10 +119,14 @@ col1, col2 = st.columns(2)
 with col1:
 
     resume = st.file_uploader(
-        "Upload your resume",
-        type=["pdf"],
-        help="Upload a text-based PDF resume."
-    )
+    "Upload your resume",
+    type=["pdf"],
+    help="Maximum file size: 5 MB."
+)
+
+if resume is not None and resume.size > 5 * 1024 * 1024:
+    st.error("File is too large. Maximum allowed size is 5 MB.")
+    resume = None
 
 with col2:
 
@@ -130,11 +137,27 @@ with col2:
     )
 
 
-analyze_button = st.button(
-    "Analyze Resume",
-    type="primary",
-    use_container_width=True
-)
+col1, col2 = st.columns(2)
+
+with col1:
+    analyze_button = st.button(
+        "Analyze Resume",
+        type="primary",
+        use_container_width=True
+    )
+
+with col2:
+    clear_button = st.button(
+        "Clear Analysis",
+        use_container_width=True
+    )
+
+if analyze_button:
+    st.session_state["show_results"] = True
+
+if clear_button:
+    st.session_state["show_results"] = False
+    st.rerun()
 
 
 # ==========================================
