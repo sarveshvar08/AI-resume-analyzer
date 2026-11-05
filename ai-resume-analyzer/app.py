@@ -1,6 +1,7 @@
 import streamlit as st
 import fitz
 from resume_parser import extract_resume_text
+from analyzer import analyze_resume
 
 # Page configuration
 st.set_page_config(
@@ -45,19 +46,58 @@ if st.button("Analyze Resume", use_container_width=True):
         st.error("Please enter a job description.")
 
     else:
-        with st.spinner("Extracting resume text..."):
+
+        with st.spinner("Analyzing your resume..."):
 
             resume_text = extract_resume_text(resume)
 
-        if resume_text:
+            if not resume_text:
+                st.error("Could not extract resume text.")
 
-            st.success("Resume text extracted successfully!")
+            else:
 
-            with st.expander("View Extracted Resume Text"):
-                st.text(resume_text)
+                results = analyze_resume(
+                    resume_text,
+                    job_description
+                )
 
-        else:
-            st.error(
-                "Could not extract text. "
-                "Your PDF may be scanned or image-based."
-            )
+                st.success("Analysis completed!")
+
+                # Display match percentage
+                st.subheader("Resume Match Analysis")
+
+                score = results["match_percentage"]
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.metric(
+                        "Resume Match",
+                        f"{score}%"
+                    )
+
+                with col2:
+                    st.metric(
+                        "Matching Terms",
+                        len(results["matching_terms"])
+                    )
+
+                st.progress(score / 100)
+
+                # Matching terms
+                st.subheader("Matching Keywords")
+
+                st.write(
+                    results["matching_terms"]
+                    if results["matching_terms"]
+                    else "No matching terms found."
+                )
+
+                # Missing terms
+                st.subheader("Potentially Missing Keywords")
+
+                st.write(
+                    results["missing_terms"]
+                    if results["missing_terms"]
+                    else "No missing terms found."
+                )
