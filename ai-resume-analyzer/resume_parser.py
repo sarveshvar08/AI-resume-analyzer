@@ -1,5 +1,23 @@
 import fitz
 import re
+import os
+import pytesseract
+import unicodedata
+
+from PIL import Image
+from io import BytesIO
+
+
+# ==========================================
+# TESSERACT CONFIGURATION
+# ==========================================
+
+TESSERACT_PATH = (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
+
+if os.path.exists(TESSERACT_PATH):
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 
 # ==========================================
@@ -8,12 +26,14 @@ import re
 
 def clean_text(text):
 
-    # Normalize line breaks
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
 
-    # Remove unwanted control characters
-    text = re.sub(r"[^\x20-\x7E\n\t]", " ", text)
+    # Remove control characters but preserve Unicode text
+    text = "".join(
+        char for char in text
+        if char in "\n\t" or unicodedata.category(char) != "Cc"
+    )
 
     # Remove excessive spaces
     text = re.sub(r"[ \t]+", " ", text)
@@ -25,6 +45,42 @@ def clean_text(text):
 
 
 # ==========================================
+# OCR FUNCTION
+# ==========================================
+
+def extract_text_using_ocr(page):
+
+    try:
+
+        # Render PDF page into an image
+        pixmap = page.get_pixmap(
+            matrix=fitz.Matrix(2, 2),
+            alpha=False
+        )
+
+        image_bytes = pixmap.tobytes("png")
+
+        image = Image.open(
+            BytesIO(image_bytes)
+        )
+
+        # Recognize text using Tesseract
+        extracted_text = pytesseract.image_to_string(
+            image,
+            lang="eng",
+            config="--psm 6"
+        )
+
+        return extracted_text.strip()
+
+    except Exception as error:
+
+        print("OCR extraction error:", error)
+
+        return None
+
+
+# ==========================================
 # PDF TEXT EXTRACTION
 # ==========================================
 
@@ -32,31 +88,39 @@ def extract_resume_text(pdf_file):
 
     try:
 
-        # Read PDF without depending on file pointer position
         pdf_bytes = pdf_file.getvalue()
-
-        document = fitz.open(
-            stream=pdf_bytes,
-            filetype="pdf"
-        )
 
         extracted_pages = []
 
-        # Extract text from every page
-        for page_number, page in enumerate(document, start=1):
+        with fitz.open(
+            stream=pdf_bytes,
+            filetype="pdf"
+        ) as document:
 
-            page_text = page.get_text(
-                "text",
-                sort=True
-            )
+            for page_number, page in enumerate(
+                document,
+                start=1
+            ):
 
-            if page_text.strip():
-
-                extracted_pages.append(
-                    page_text
+                # First try normal text extraction
+                page_text = page.get_text(
+                    "text",
+                    sort=True
                 )
 
-        document.close()
+                # If very little text exists, use OCR
+                if len(page_text.strip()) < 40:
+
+                    print(
+                        f"Page {page_number}: Using OCR"
+                    )
+
+                    ocr_text = extract_text_using_ocr(page)
+
+                    if ocr_text:
+                        page_text = ocr_text
+
+                extracted_pages.append(page_text)
 
         # Combine all pages
         extracted_text = "\n".join(extracted_pages)
@@ -65,7 +129,6 @@ def extract_resume_text(pdf_file):
         extracted_text = clean_text(extracted_text)
 
         if not extracted_text:
-
             return None
 
         return extracted_text
@@ -115,7 +178,6 @@ def extract_phone_numbers(text):
         text
     )
 
-    # Normalize and validate candidates
     valid_numbers = []
 
     for number in numbers:
@@ -129,7 +191,6 @@ def extract_phone_numbers(text):
         if 10 <= len(digits) <= 13:
 
             if digits not in valid_numbers:
-
                 valid_numbers.append(digits)
 
     return valid_numbers
