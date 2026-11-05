@@ -6,7 +6,7 @@ from skill_extractor import extract_skills
 from improvement_suggestions import generate_suggestions
 from section_detector import detect_sections
 from report_generator import generate_pdf_report
-
+from resume_parser import extract_contact_info
 
 # ==========================================
 # PAGE CONFIGURATION
@@ -186,10 +186,14 @@ if analyze_button:
                     "Unable to extract text. "
                     "Please upload a valid text-based PDF."
                 )
+            
 
             else:
 
+
                 # Resume similarity analysis
+
+                contact_info = extract_contact_info(resume_text)
 
                 results = analyze_resume(
                     resume_text,
