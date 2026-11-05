@@ -2,6 +2,7 @@ import streamlit as st
 import fitz
 from resume_parser import extract_resume_text
 from analyzer import analyze_resume
+from skill_extractor import extract_skills
 
 # Page configuration
 st.set_page_config(
@@ -101,3 +102,71 @@ if st.button("Analyze Resume", use_container_width=True):
                     if results["missing_terms"]
                     else "No missing terms found."
                 )
+
+# Extract skills from resume and job description
+resume_skills = extract_skills(resume_text)
+job_skills = extract_skills(job_description)
+
+# Flatten category-wise skills into lists
+resume_skill_list = [
+    skill
+    for skills in resume_skills.values()
+    for skill in skills
+]
+
+job_skill_list = [
+    skill
+    for skills in job_skills.values()
+    for skill in skills
+]
+
+# Identify missing skills
+missing_skills = [
+    skill
+    for skill in job_skill_list
+    if skill not in resume_skill_list
+]
+
+# Calculate skill coverage
+if job_skill_list:
+    matched_skills = set(resume_skill_list) & set(job_skill_list)
+
+    skill_coverage = (
+        len(matched_skills) / len(set(job_skill_list))
+    ) * 100
+else:
+    skill_coverage = 0
+
+st.divider()
+
+st.header("Resume Skill Analysis")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Resume Skills", len(resume_skill_list))
+
+with col2:
+    st.metric("Required Skills", len(job_skill_list))
+
+with col3:
+    st.metric("Skill Coverage", f"{skill_coverage:.1f}%")
+
+st.subheader("Skills Found in Resume")
+
+for category, skills in resume_skills.items():
+    if skills:
+        st.write(f"**{category}:** {', '.join(skills)}")
+
+st.subheader("Skills Required by Job")
+
+for category, skills in job_skills.items():
+    if skills:
+        st.write(f"**{category}:** {', '.join(skills)}")
+
+st.subheader("Missing Skills")
+
+if missing_skills:
+    st.warning(", ".join(missing_skills))
+else:
+    st.success("All detected required skills are present!")
