@@ -20,53 +20,128 @@ st.set_page_config(
 
 
 # ==========================================
-# APPLICATION HEADER
+# CUSTOM CSS
 # ==========================================
 
-st.title("AI Resume Analyzer")
+st.markdown("""
+<style>
 
-st.write(
-    "Analyze your resume against a job description "
-    "and discover ways to improve it."
-)
+.main {
+    background-color: #f8fafc;
+}
 
-st.divider()
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+h1 {
+    color: #172554;
+    font-weight: 750;
+}
+
+h2, h3 {
+    color: #1e3a8a;
+}
+
+.metric-card {
+    background-color: white;
+    padding: 22px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.header-box {
+    background: linear-gradient(120deg, #1e3a8a, #2563eb);
+    padding: 30px;
+    border-radius: 15px;
+    color: white;
+    margin-bottom: 25px;
+}
+
+.header-box h1 {
+    color: white;
+}
+
+.header-box p {
+    color: #dbeafe;
+    font-size: 16px;
+}
+
+div[data-testid="stMetric"] {
+    background-color: white;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.stButton button {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.stDownloadButton button {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 
 # ==========================================
-# USER INPUT
+# HEADER
 # ==========================================
+
+st.markdown("""
+<div class="header-box">
+    <h1>AI Resume Analyzer</h1>
+    <p>
+        Analyze your resume, identify skill gaps,
+        and improve your job application.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ==========================================
+# INPUT SECTION
+# ==========================================
+
+st.subheader("Start Your Analysis")
 
 col1, col2 = st.columns(2)
 
 with col1:
 
-    st.subheader("Upload Resume")
-
     resume = st.file_uploader(
-        "Upload your resume (PDF)",
-        type=["pdf"]
+        "Upload your resume",
+        type=["pdf"],
+        help="Upload a text-based PDF resume."
     )
 
 with col2:
 
-    st.subheader("Job Description")
-
     job_description = st.text_area(
-        "Paste the job description here",
-        height=200,
-        placeholder="Enter the job requirements..."
+        "Job Description",
+        height=150,
+        placeholder="Paste the job description here..."
     )
 
 
-st.divider()
+analyze_button = st.button(
+    "Analyze Resume",
+    type="primary",
+    use_container_width=True
+)
 
 
 # ==========================================
-# ANALYZE BUTTON
+# ANALYSIS
 # ==========================================
 
-if st.button("Analyze Resume", use_container_width=True):
+if analyze_button:
 
     if resume is None:
 
@@ -80,24 +155,18 @@ if st.button("Analyze Resume", use_container_width=True):
 
         with st.spinner("Analyzing your resume..."):
 
-            # ----------------------------------
-            # STEP 1: EXTRACT RESUME TEXT
-            # ----------------------------------
-
             resume_text = extract_resume_text(resume)
 
             if not resume_text:
 
                 st.error(
-                    "Could not extract resume text. "
+                    "Unable to extract text. "
                     "Please upload a valid text-based PDF."
                 )
 
             else:
 
-                # ----------------------------------
-                # STEP 2: RESUME MATCH ANALYSIS
-                # ----------------------------------
+                # Resume similarity analysis
 
                 results = analyze_resume(
                     resume_text,
@@ -106,61 +175,10 @@ if st.button("Analyze Resume", use_container_width=True):
 
                 score = results["match_percentage"]
 
-                st.success("Analysis completed!")
-
-                st.divider()
-
-                st.header("1. Resume Match Analysis")
-
-                col1, col2 = st.columns(2)
-
-                with col1:
-
-                    st.metric(
-                        "Resume Match",
-                        f"{score}%"
-                    )
-
-                with col2:
-
-                    st.metric(
-                        "Matching Terms",
-                        len(results["matching_terms"])
-                    )
-
-                st.progress(
-                    max(0.0, min(score / 100, 1.0))
-                )
-
-                # Matching keywords
-
-                st.subheader("Matching Keywords")
-
-                st.write(
-                    results["matching_terms"]
-                    if results["matching_terms"]
-                    else "No matching terms found."
-                )
-
-                # Missing keywords
-
-                st.subheader("Potentially Missing Keywords")
-
-                st.write(
-                    results["missing_terms"]
-                    if results["missing_terms"]
-                    else "No missing terms found."
-                )
-
-                # ----------------------------------
-                # STEP 3: SKILL EXTRACTION
-                # ----------------------------------
+                # Skill extraction
 
                 resume_skills = extract_skills(resume_text)
-
                 job_skills = extract_skills(job_description)
-
-                # Flatten category-wise skills
 
                 resume_skill_list = [
                     skill
@@ -174,8 +192,6 @@ if st.button("Analyze Resume", use_container_width=True):
                     for skill in skills
                 ]
 
-                # Find matching and missing skills
-
                 matched_skills = (
                     set(resume_skill_list)
                     & set(job_skill_list)
@@ -185,8 +201,6 @@ if st.button("Analyze Resume", use_container_width=True):
                     set(job_skill_list)
                     - set(resume_skill_list)
                 )
-
-                # Calculate skill coverage
 
                 if job_skill_list:
 
@@ -199,95 +213,9 @@ if st.button("Analyze Resume", use_container_width=True):
 
                     skill_coverage = 0
 
-                # ----------------------------------
-                # STEP 4: SKILL ANALYSIS DISPLAY
-                # ----------------------------------
-
-                st.divider()
-
-                st.header("2. Resume Skill Analysis")
-
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-
-                    st.metric(
-                        "Resume Skills",
-                        len(set(resume_skill_list))
-                    )
-
-                with col2:
-
-                    st.metric(
-                        "Required Skills",
-                        len(set(job_skill_list))
-                    )
-
-                with col3:
-
-                    st.metric(
-                        "Skill Coverage",
-                        f"{skill_coverage:.1f}%"
-                    )
-
-                st.progress(skill_coverage / 100)
-
-                # Skills found in resume
-
-                st.subheader("Skills Found in Resume")
-
-                for category, skills in resume_skills.items():
-
-                    if skills:
-
-                        st.write(
-                            f"**{category}:** {', '.join(skills)}"
-                        )
-
-                # Skills required by job
-
-                st.subheader("Skills Required by Job")
-
-                for category, skills in job_skills.items():
-
-                    if skills:
-
-                        st.write(
-                            f"**{category}:** {', '.join(skills)}"
-                        )
-
-                # Missing skills
-
-                st.subheader("Missing Skills")
-
-                if missing_skills:
-
-                    st.warning(
-                        ", ".join(missing_skills)
-                    )
-
-                elif job_skill_list:
-
-                    st.success(
-                        "All detected required skills are present!"
-                    )
-
-                else:
-
-                    st.info(
-                        "No recognizable skills were detected "
-                        "in the job description."
-                    )
-
-                # ----------------------------------
-                # STEP 5: RESUME SECTION DETECTION
-                # ----------------------------------
+                # Section detection
 
                 detected_sections = detect_sections(resume_text)
-
-                st.divider()
-
-                st.header("3. Resume Structure Analysis")
 
                 all_sections = [
                     "Summary",
@@ -299,23 +227,7 @@ if st.button("Analyze Resume", use_container_width=True):
                     "Achievements"
                 ]
 
-                for section in all_sections:
-
-                    if section in detected_sections:
-
-                        st.success(
-                            f"{section} section detected"
-                        )
-
-                    else:
-
-                        st.warning(
-                            f"{section} section missing"
-                        )
-
-                # ----------------------------------
-                # STEP 6: IMPROVEMENT SUGGESTIONS
-                # ----------------------------------
+                # Improvement suggestions
 
                 suggestions = generate_suggestions(
                     resume_text,
@@ -323,11 +235,220 @@ if st.button("Analyze Resume", use_container_width=True):
                     missing_skills
                 )
 
+                st.success("Analysis completed successfully!")
+
                 st.divider()
 
-                st.header("4. Resume Improvement Suggestions")
 
-                if suggestions:
+                # ==================================
+                # DASHBOARD METRICS
+                # ==================================
+
+                st.header("Analysis Overview")
+
+                col1, col2, col3, col4 = st.columns(4)
+
+                with col1:
+
+                    st.metric(
+                        "Resume Match",
+                        f"{score}%"
+                    )
+
+                with col2:
+
+                    st.metric(
+                        "Skill Coverage",
+                        f"{skill_coverage:.1f}%"
+                    )
+
+                with col3:
+
+                    st.metric(
+                        "Matching Skills",
+                        len(matched_skills)
+                    )
+
+                with col4:
+
+                    st.metric(
+                        "Missing Skills",
+                        len(missing_skills)
+                    )
+
+
+                # ==================================
+                # PROGRESS VISUALIZATION
+                # ==================================
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+
+                    st.subheader("Resume Match")
+
+                    st.progress(
+                        max(0.0, min(score / 100, 1.0))
+                    )
+
+                    st.caption(
+                        "Text similarity between resume and job description."
+                    )
+
+                with col2:
+
+                    st.subheader("Skill Coverage")
+
+                    st.progress(
+                        skill_coverage / 100
+                    )
+
+                    st.caption(
+                        "Percentage of detected job skills found in your resume."
+                    )
+
+
+                st.divider()
+
+
+                # ==================================
+                # ANALYSIS TABS
+                # ==================================
+
+                tab1, tab2, tab3, tab4 = st.tabs([
+                    "Keyword Analysis",
+                    "Skill Analysis",
+                    "Resume Structure",
+                    "Suggestions"
+                ])
+
+
+                # ==================================
+                # TAB 1: KEYWORDS
+                # ==================================
+
+                with tab1:
+
+                    st.subheader("Matching Keywords")
+
+                    if results["matching_terms"]:
+
+                        st.success(
+                            ", ".join(results["matching_terms"])
+                        )
+
+                    else:
+
+                        st.info("No matching keywords found.")
+
+                    st.subheader("Potentially Missing Keywords")
+
+                    if results["missing_terms"]:
+
+                        st.warning(
+                            ", ".join(results["missing_terms"])
+                        )
+
+                    else:
+
+                        st.success("No missing keywords detected.")
+
+
+                # ==================================
+                # TAB 2: SKILLS
+                # ==================================
+
+                with tab2:
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+
+                        st.subheader("Resume Skills")
+
+                        for category, skills in resume_skills.items():
+
+                            if skills:
+
+                                with st.expander(category, expanded=True):
+
+                                    for skill in skills:
+
+                                        st.write(f"✓ {skill}")
+
+                    with col2:
+
+                        st.subheader("Job Requirements")
+
+                        for category, skills in job_skills.items():
+
+                            if skills:
+
+                                with st.expander(category, expanded=True):
+
+                                    for skill in skills:
+
+                                        if skill in matched_skills:
+
+                                            st.write(f"✓ {skill}")
+
+                                        else:
+
+                                            st.write(f"✗ {skill}")
+
+                    st.divider()
+
+                    st.subheader("Missing Skills")
+
+                    if missing_skills:
+
+                        st.warning(
+                            ", ".join(missing_skills)
+                        )
+
+                    elif job_skill_list:
+
+                        st.success(
+                            "All detected required skills are present."
+                        )
+
+                    else:
+
+                        st.info(
+                            "No recognizable skills found in the job description."
+                        )
+
+
+                # ==================================
+                # TAB 3: RESUME STRUCTURE
+                # ==================================
+
+                with tab3:
+
+                    st.subheader("Resume Section Detection")
+
+                    for section in all_sections:
+
+                        if section in detected_sections:
+
+                            st.success(
+                                f"✓ {section} section detected"
+                            )
+
+                        else:
+
+                            st.warning(
+                                f"✗ {section} section missing"
+                            )
+
+
+                # ==================================
+                # TAB 4: SUGGESTIONS
+                # ==================================
+
+                with tab4:
+
+                    st.subheader("Improvement Recommendations")
 
                     for index, suggestion in enumerate(
                         suggestions,
@@ -338,19 +459,14 @@ if st.button("Analyze Resume", use_container_width=True):
                             f"{index}. {suggestion}"
                         )
 
-                else:
 
-                    st.success(
-                        "No basic improvement suggestions found."
-                    )
-                
-                # ----------------------------------
-                # STEP 7: DOWNLOAD PDF REPORT
-                # ----------------------------------
+                # ==================================
+                # PDF REPORT DOWNLOAD
+                # ==================================
 
                 st.divider()
 
-                st.header("5. Download Your Report")
+                st.header("Download Analysis Report")
 
                 pdf_report = generate_pdf_report(
                     score=score,
@@ -366,10 +482,11 @@ if st.button("Analyze Resume", use_container_width=True):
                 )
 
                 st.download_button(
-                    label="Download Analysis Report (PDF)",
+                    label="Download PDF Report",
                     data=pdf_report,
                     file_name="AI_Resume_Analysis_Report.pdf",
                     mime="application/pdf",
+                    type="primary",
                     use_container_width=True
                 )
 
@@ -380,12 +497,13 @@ if st.button("Analyze Resume", use_container_width=True):
 
 st.divider()
 
-st.caption(
-    "AI Resume Analyzer | Built with Python and Streamlit"
-)
-
-st.caption(
-    "Note: Match percentages and recommendations are "
-    "based on text similarity and rule-based analysis. "
-    "They are not official ATS scores."
+st.markdown(
+    """
+    <div style="text-align:center; color:#64748b;">
+        <p><b>AI Resume Analyzer</b></p>
+        <p>Built with Python, Streamlit and Scikit-learn.</p>
+        <p>Resume analysis is indicative and not an official ATS assessment.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
