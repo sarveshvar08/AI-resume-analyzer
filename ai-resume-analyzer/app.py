@@ -618,7 +618,7 @@ st.divider()
 st.markdown(
     """
     <div style="text-align:center; color:#64748b;">
-        <p><b>AI Resume Analyzer</b></p>
+        <p><b>AI Resume Analyzer v0.1</b></p>
         <p>Built with Python, Streamlit and Scikit-learn.</p>
         <p>Resume analysis is indicative and not an official ATS assessment.</p>
     </div>
