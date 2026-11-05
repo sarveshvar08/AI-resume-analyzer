@@ -7,6 +7,7 @@ from improvement_suggestions import generate_suggestions
 from section_detector import detect_sections
 from report_generator import generate_pdf_report
 from resume_parser import extract_contact_info
+from profile_extractor import extract_candidate_profile
 
 # ==========================================
 # PAGE CONFIGURATION
@@ -179,6 +180,7 @@ if analyze_button:
         with st.spinner("Analyzing your resume..."):
 
             resume_text = extract_resume_text(resume)
+            candidate_profile = extract_candidate_profile(resume_text)
 
             if not resume_text:
 
@@ -342,11 +344,12 @@ if analyze_button:
                 # ANALYSIS TABS
                 # ==================================
 
-                tab1, tab2, tab3, tab4 = st.tabs([
+                tab1, tab2, tab3, tab4, tab5 = st.tabs([
                     "Keyword Analysis",
                     "Skill Analysis",
                     "Resume Structure",
-                    "Suggestions"
+                    "Suggestions",
+                    "Candidate Profile"
                 ])
 
 
@@ -486,6 +489,94 @@ if analyze_button:
                             f"{index}. {suggestion}"
                         )
 
+
+                # ==================================
+                # TAB 5: CANDIDATE PROFILE
+                # ==================================
+
+                with tab5:
+
+                    st.subheader("Candidate Information")
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+
+                        st.write("**Name**")
+
+                        st.write(candidate_profile["name"])
+
+                        st.write("**Email Addresses**")
+
+                        st.write(
+                            ", ".join(candidate_profile["emails"])
+                            if candidate_profile["emails"]
+                            else "Not detected"
+                        )
+
+                    with col2:
+
+                        st.write("**Phone Numbers**")
+
+                        st.write(
+                            ", ".join(candidate_profile["phone_numbers"])
+                            if candidate_profile["phone_numbers"]
+                            else "Not detected"
+                        )
+
+                        st.write("**Graduation Years**")
+
+                        st.write(
+                            ", ".join(candidate_profile["graduation_years"])
+                            if candidate_profile["graduation_years"]
+                            else "Not detected"
+                        )
+
+                    st.divider()
+
+                    st.subheader("Education")
+
+                    if candidate_profile["education"]:
+
+                        for education in candidate_profile["education"]:
+
+                            st.write(f"• {education}")
+
+                    else:
+
+                        st.info("No recognized degree information found.")
+
+                    st.divider()
+
+                    st.subheader("Experience")
+
+                    if candidate_profile["experience_duration"]:
+
+                        st.write(
+                            ", ".join(candidate_profile["experience_duration"])
+                        )
+
+                    if candidate_profile["experience_details"]:
+
+                        for detail in candidate_profile["experience_details"]:
+
+                            st.write(f"• {detail}")
+
+                    else:
+
+                        st.info("No experience details detected.")
+
+                    st.divider()
+
+                    st.subheader("Extracted Skills")
+
+                    for category, skills in candidate_profile["skills"].items():
+
+                        if skills:
+
+                            st.write(
+                                f"**{category}:** {', '.join(skills)}"
+                            )
 
                 # ==================================
                 # PDF REPORT DOWNLOAD
